@@ -25,6 +25,9 @@ declare global {
     textSize:any;
     text:any;
     rect:any;
+    keyReleased:any;
+    key:string;
+    keyCode:number;
   }
 }
 
@@ -249,6 +252,7 @@ var selectedCardDrawer:SelectedCardDrawer;
 // var cardSprite:CardSprite;
 var handCardsDrawer:HandCardsDrawer;
 var commandLogs:PlumberGame[] = [];
+var buttonCallback:ButtonCallback;
 window.setup = function() {
   context.game = PlumberGame.initGame();
   commandLogs.push(context.game);
@@ -262,8 +266,7 @@ window.setup = function() {
   fieldDrawer = new FieldDrawer(branchDrawer, mainCamera);
   selectedCardDrawer = new SelectedCardDrawer(branchDrawer, mainCamera)
   handCardsDrawer = new HandCardsDrawer();
-
-  new ControlButtons({
+  buttonCallback = {
     onSelected: (index:number) => {
       console.log('selected', index);
       var xIndex = Math.floor((mainCamera.x + window.width / 2) / GRID_SIZE);
@@ -293,7 +296,8 @@ window.setup = function() {
       commandLogs.pop();
       context.game = commandLogs.at(-1)!;
     }
-  }).init();
+  };
+  new ControlButtons(buttonCallback).init();
 }
 window.draw = function() {
   window.background(220);
@@ -387,6 +391,37 @@ window.mouseReleased = function(){
     cardDragMode = false;
   } else {
     mainCamera.mouseReleased();
+  }
+  
+}
+
+window.keyReleased = function() {
+  const key = window.key;
+  const keyCode = window.keyCode;
+  console.log(key, keyCode)
+  if(context.game.selectedCard) {
+    if(key == 'ArrowUp') {
+      buttonCallback.onPressedArrow('up');
+    } else if(key == 'ArrowDown') {
+      buttonCallback.onPressedArrow('down');
+    }
+    if(key == 'ArrowRight') {
+      buttonCallback.onPressedArrow('right');
+    } else if(key == 'ArrowLeft') {
+      buttonCallback.onPressedArrow('left');
+    }
+    if(key == ' ') {
+      buttonCallback.onPressedRotate();
+    } else if(key == 'Enter') {
+      buttonCallback.onPut();
+    }
+  }
+  if(key == '1') {
+    buttonCallback.onSelected(0)
+  } else if(key == '2') {
+    buttonCallback.onSelected(1)
+  } else if(key == '3') {
+    buttonCallback.onSelected(2)
   }
   
 }
