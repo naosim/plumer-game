@@ -28,6 +28,7 @@ declare global {
     keyReleased:any;
     key:string;
     keyCode:number;
+    random:any;
   }
 }
 
@@ -159,6 +160,88 @@ class HandCardsDrawer {
   }
 }
 
+class WaterParticle {
+  game:PlumberGame;
+  index = 0;
+  sprites:{x:number,y:number,vx:number, vy:number, ax:number, ay:number, time:number}[] = [];
+  notConnectedDirections:{
+    xIndex: number;
+    yIndex: number;
+    direction: "up" | "down" | "right" | "left";
+  }[]
+  constructor(game:PlumberGame) {
+    this.game = game;
+    this.notConnectedDirections = game.notConnectedDirections
+  }
+  updateGame(game:PlumberGame) {
+    this.game = game;
+    this.notConnectedDirections = game.notConnectedDirections
+  }
+  count = 0;
+  draw() {
+    this.count = (this.count + 1) % 5;
+    const g = 0.00;
+    const yokoRange = [-0.5, 0.5]
+    const tateRange = [0.2, 1.0]
+    if(this.count == 0) {
+      this.notConnectedDirections.map(({xIndex, yIndex, direction}) => {
+        var p = {x:0, y:0, vx:0, vy:0, ax:0, ay:0, time:0}
+        p.ay = g;
+        window.fill(50, 100, 255);
+        var offsetX = 0;
+        var offsetY = 0;
+        if(direction == 'up') {
+          offsetY = GRID_SIZE / 4
+          p.x = xIndex * GRID_SIZE + GRID_SIZE / 2;
+          p.y = yIndex * GRID_SIZE + GRID_SIZE;
+          p.vx = window.random(yokoRange[0], yokoRange[1])
+          p.vy = -window.random(tateRange[0], tateRange[1]);
+          
+        }
+        if(direction == 'down') {
+          offsetY = - GRID_SIZE / 4
+          p.x = xIndex * GRID_SIZE + GRID_SIZE / 2;
+          p.y = yIndex * GRID_SIZE;
+          p.vx = window.random(yokoRange[0], yokoRange[1])
+          p.vy = window.random(tateRange[0], tateRange[1]);
+        }
+        if(direction == 'right') {
+          offsetX = GRID_SIZE / 4
+          p.x = xIndex * GRID_SIZE;
+          p.y = yIndex * GRID_SIZE + GRID_SIZE / 2;
+          p.vy = window.random(yokoRange[0], yokoRange[1])
+          p.vx = window.random(tateRange[0], tateRange[1]);
+        }
+        if(direction == 'left') {
+          offsetX = - GRID_SIZE / 4
+          p.x = xIndex * GRID_SIZE + GRID_SIZE;
+          p.y = yIndex * GRID_SIZE + GRID_SIZE / 2;
+          p.vy = window.random(yokoRange[0], yokoRange[1])
+          p.vx = -window.random(tateRange[0], tateRange[1]);
+        }
+        this.sprites.push(p)
+        // window.square(xIndex * GRID_SIZE - mainCamera.x, yIndex * GRID_SIZE - mainCamera.y, GRID_SIZE, GRID_SIZE / 6)
+      })
+    }
+    
+    
+    for(let i = this.sprites.length - 1; i >= 0; i--) {
+      let p = this.sprites[i];
+      p.vx += p.ax;
+      p.vy += p.ay;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.time++;
+      window.fill(50, 100, 255, 255/p.time * 3);
+      window.circle(p.x - mainCamera.x, p.y - mainCamera.y, p.time/2)
+
+      if(p.time > 50) {
+        this.sprites.splice(i, 1)
+      }
+    }
+  }
+}
+
 
 type ButtonCallback = {
   onSelected:(index:number) => void;
@@ -242,6 +325,11 @@ var context = {
   set game(g:PlumberGame) {
     _game = g;
     statusText = `残りカード：${_game.restCardCount}枚, 穴の数：${_game.wayCount}個`
+    if(!waterParticle) {
+      waterParticle = new WaterParticle(g);
+    } else {
+      waterParticle.updateGame(g);
+    }
   }
 }
 
@@ -253,6 +341,7 @@ var selectedCardDrawer:SelectedCardDrawer;
 var handCardsDrawer:HandCardsDrawer;
 var commandLogs:PlumberGame[] = [];
 var buttonCallback:ButtonCallback;
+var waterParticle:WaterParticle;
 window.setup = function() {
   context.game = PlumberGame.initGame();
   commandLogs.push(context.game);
@@ -305,24 +394,7 @@ window.draw = function() {
   const game = context.game;
 
   // 漏れる水
-  game.notConnectedDirections.map(({xIndex, yIndex, direction}) => {
-    window.fill(50, 100, 255);
-    var offsetX = 0;
-    var offsetY = 0;
-    if(direction == 'up') {
-      offsetY = GRID_SIZE / 4
-    }
-    if(direction == 'down') {
-      offsetY = - GRID_SIZE / 4
-    }
-    if(direction == 'right') {
-      offsetX = GRID_SIZE / 4
-    }
-    if(direction == 'left') {
-      offsetX = - GRID_SIZE / 4
-    }
-    window.square(xIndex * GRID_SIZE - mainCamera.x, yIndex * GRID_SIZE - mainCamera.y, GRID_SIZE, GRID_SIZE / 6)
-  })
+  waterParticle.draw();
 
 
   fieldDrawer.draw(game.field);

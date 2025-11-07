@@ -866,6 +866,92 @@ var HandCardsDrawer = class _HandCardsDrawer {
     });
   }
 };
+var WaterParticle = class {
+  game;
+  index = 0;
+  sprites = [];
+  notConnectedDirections;
+  constructor(game) {
+    this.game = game;
+    this.notConnectedDirections = game.notConnectedDirections;
+  }
+  updateGame(game) {
+    this.game = game;
+    this.notConnectedDirections = game.notConnectedDirections;
+  }
+  count = 0;
+  draw() {
+    this.count = (this.count + 1) % 5;
+    const g1 = 0;
+    const yokoRange = [
+      -0.5,
+      0.5
+    ];
+    const tateRange = [
+      0.2,
+      1
+    ];
+    if (this.count == 0) {
+      this.notConnectedDirections.map(({ xIndex, yIndex, direction }) => {
+        var p = {
+          x: 0,
+          y: 0,
+          vx: 0,
+          vy: 0,
+          ax: 0,
+          ay: 0,
+          time: 0
+        };
+        p.ay = g1;
+        window.fill(50, 100, 255);
+        var offsetX = 0;
+        var offsetY = 0;
+        if (direction == "up") {
+          offsetY = GRID_SIZE / 4;
+          p.x = xIndex * GRID_SIZE + GRID_SIZE / 2;
+          p.y = yIndex * GRID_SIZE + GRID_SIZE;
+          p.vx = window.random(yokoRange[0], yokoRange[1]);
+          p.vy = -window.random(tateRange[0], tateRange[1]);
+        }
+        if (direction == "down") {
+          offsetY = -GRID_SIZE / 4;
+          p.x = xIndex * GRID_SIZE + GRID_SIZE / 2;
+          p.y = yIndex * GRID_SIZE;
+          p.vx = window.random(yokoRange[0], yokoRange[1]);
+          p.vy = window.random(tateRange[0], tateRange[1]);
+        }
+        if (direction == "right") {
+          offsetX = GRID_SIZE / 4;
+          p.x = xIndex * GRID_SIZE;
+          p.y = yIndex * GRID_SIZE + GRID_SIZE / 2;
+          p.vy = window.random(yokoRange[0], yokoRange[1]);
+          p.vx = window.random(tateRange[0], tateRange[1]);
+        }
+        if (direction == "left") {
+          offsetX = -GRID_SIZE / 4;
+          p.x = xIndex * GRID_SIZE + GRID_SIZE;
+          p.y = yIndex * GRID_SIZE + GRID_SIZE / 2;
+          p.vy = window.random(yokoRange[0], yokoRange[1]);
+          p.vx = -window.random(tateRange[0], tateRange[1]);
+        }
+        this.sprites.push(p);
+      });
+    }
+    for (let i = this.sprites.length - 1; i >= 0; i--) {
+      let p = this.sprites[i];
+      p.vx += p.ax;
+      p.vy += p.ay;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.time++;
+      window.fill(50, 100, 255, 255 / p.time * 3);
+      window.circle(p.x - mainCamera.x, p.y - mainCamera.y, p.time / 2);
+      if (p.time > 50) {
+        this.sprites.splice(i, 1);
+      }
+    }
+  }
+};
 var ControlButtons = class {
   cb;
   constructor(cb) {
@@ -987,6 +1073,11 @@ var context = {
   set game(g) {
     _game = g;
     statusText = `\u6B8B\u308A\u30AB\u30FC\u30C9\uFF1A${_game.restCardCount}\u679A, \u7A74\u306E\u6570\uFF1A${_game.wayCount}\u500B`;
+    if (!waterParticle) {
+      waterParticle = new WaterParticle(g);
+    } else {
+      waterParticle.updateGame(g);
+    }
   }
 };
 var mainCamera;
@@ -996,6 +1087,7 @@ var selectedCardDrawer;
 var handCardsDrawer;
 var commandLogs = [];
 var buttonCallback;
+var waterParticle;
 window.setup = function() {
   context.game = PlumberGame.initGame();
   commandLogs.push(context.game);
@@ -1049,24 +1141,7 @@ window.setup = function() {
 window.draw = function() {
   window.background(220);
   const game = context.game;
-  game.notConnectedDirections.map(({ xIndex, yIndex, direction }) => {
-    window.fill(50, 100, 255);
-    var offsetX = 0;
-    var offsetY = 0;
-    if (direction == "up") {
-      offsetY = GRID_SIZE / 4;
-    }
-    if (direction == "down") {
-      offsetY = -GRID_SIZE / 4;
-    }
-    if (direction == "right") {
-      offsetX = GRID_SIZE / 4;
-    }
-    if (direction == "left") {
-      offsetX = -GRID_SIZE / 4;
-    }
-    window.square(xIndex * GRID_SIZE - mainCamera.x, yIndex * GRID_SIZE - mainCamera.y, GRID_SIZE, GRID_SIZE / 6);
-  });
+  waterParticle.draw();
   fieldDrawer.draw(game.field);
   if (game.selectedCard) {
     selectedCardDrawer.draw(game.selectedCard, game.checkCardFit());
@@ -1151,7 +1226,6 @@ window.keyReleased = function() {
   const keyCode = window.keyCode;
   console.log(key, keyCode);
   if (context.game.selectedCard) {
-    const selectedCard = context.game.selectedCard;
     if (key == "ArrowUp") {
       buttonCallback.onPressedArrow("up");
     } else if (key == "ArrowDown") {
@@ -1166,12 +1240,13 @@ window.keyReleased = function() {
       buttonCallback.onPressedRotate();
     } else if (key == "Enter") {
       buttonCallback.onPut();
-    } else if (key == "1") {
-      buttonCallback.onSelected(0);
-    } else if (key == "2") {
-      buttonCallback.onSelected(1);
-    } else if (key == "3") {
-      buttonCallback.onSelected(2);
     }
+  }
+  if (key == "1") {
+    buttonCallback.onSelected(0);
+  } else if (key == "2") {
+    buttonCallback.onSelected(1);
+  } else if (key == "3") {
+    buttonCallback.onSelected(2);
   }
 };
