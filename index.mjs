@@ -776,7 +776,7 @@ var Camera = class {
     this.p5.square(x - this.x, y - this.y, size, tl, tr, br, bl);
   }
   circle(x, y, r) {
-    this.p5.circle(x, y, r);
+    this.p5.circle(x - this.x, y - this.y, r);
   }
 };
 
@@ -884,8 +884,104 @@ var BranchDrawer = class {
   }
 };
 
-// src/index.ts
+// src/view/WaterParticle.ts
 var GRID_SIZE2 = config.gridSize;
+var WaterParticle = class {
+  camera;
+  p5;
+  game;
+  index;
+  sprites;
+  notConnectedDirections;
+  constructor(game, camera, p52) {
+    this.camera = camera;
+    this.p5 = p52;
+    this.index = 0;
+    this.sprites = [];
+    this.count = 0;
+    this.game = game;
+    this.notConnectedDirections = game.notConnectedDirections;
+  }
+  updateGame(game) {
+    this.game = game;
+    this.notConnectedDirections = game.notConnectedDirections;
+  }
+  count;
+  draw() {
+    this.count = (this.count + 1) % 5;
+    const g = 0;
+    const yokoRange = [
+      -0.5,
+      0.5
+    ];
+    const tateRange = [
+      0.2,
+      1
+    ];
+    if (this.count == 0) {
+      this.notConnectedDirections.map(({ xIndex, yIndex, direction }) => {
+        var p = {
+          x: 0,
+          y: 0,
+          vx: 0,
+          vy: 0,
+          ax: 0,
+          ay: 0,
+          time: 0
+        };
+        p.ay = g;
+        this.p5.fill(50, 100, 255);
+        var offsetX = 0;
+        var offsetY = 0;
+        if (direction == "up") {
+          offsetY = GRID_SIZE2 / 4;
+          p.x = xIndex * GRID_SIZE2 + GRID_SIZE2 / 2;
+          p.y = yIndex * GRID_SIZE2 + GRID_SIZE2;
+          p.vx = this.p5.random(yokoRange[0], yokoRange[1]);
+          p.vy = -this.p5.random(tateRange[0], tateRange[1]);
+        }
+        if (direction == "down") {
+          offsetY = -GRID_SIZE2 / 4;
+          p.x = xIndex * GRID_SIZE2 + GRID_SIZE2 / 2;
+          p.y = yIndex * GRID_SIZE2;
+          p.vx = this.p5.random(yokoRange[0], yokoRange[1]);
+          p.vy = this.p5.random(tateRange[0], tateRange[1]);
+        }
+        if (direction == "right") {
+          offsetX = GRID_SIZE2 / 4;
+          p.x = xIndex * GRID_SIZE2;
+          p.y = yIndex * GRID_SIZE2 + GRID_SIZE2 / 2;
+          p.vy = this.p5.random(yokoRange[0], yokoRange[1]);
+          p.vx = this.p5.random(tateRange[0], tateRange[1]);
+        }
+        if (direction == "left") {
+          offsetX = -GRID_SIZE2 / 4;
+          p.x = xIndex * GRID_SIZE2 + GRID_SIZE2;
+          p.y = yIndex * GRID_SIZE2 + GRID_SIZE2 / 2;
+          p.vy = this.p5.random(yokoRange[0], yokoRange[1]);
+          p.vx = -this.p5.random(tateRange[0], tateRange[1]);
+        }
+        this.sprites.push(p);
+      });
+    }
+    for (let i = this.sprites.length - 1; i >= 0; i--) {
+      let p = this.sprites[i];
+      p.vx += p.ax;
+      p.vy += p.ay;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.time++;
+      this.p5.fill(50, 100, 255, 255 / p.time * 3);
+      this.camera.circle(p.x, p.y, p.time / 2);
+      if (p.time > 50) {
+        this.sprites.splice(i, 1);
+      }
+    }
+  }
+};
+
+// src/index.ts
+var GRID_SIZE3 = config.gridSize;
 var p5 = window;
 var FieldDrawer = class {
   branchDrawer;
@@ -940,17 +1036,17 @@ var HandCardsDrawer = class _HandCardsDrawer {
   camera;
   constructor() {
     var cameraX = -_HandCardsDrawer.leftMergin(3);
-    var cameraY = -(p5.height - GRID_SIZE2);
-    console.log(GRID_SIZE2, cameraX);
+    var cameraY = -(p5.height - GRID_SIZE3);
+    console.log(GRID_SIZE3, cameraX);
     this.camera = new Camera(cameraX, cameraY, p5);
     this.branchDrawer = new BranchDrawer(this.camera, p5);
   }
   static leftMergin(cardCount) {
-    return (p5.width - GRID_SIZE2 * (2 * cardCount + (cardCount - 1))) / 2;
+    return (p5.width - GRID_SIZE3 * (2 * cardCount + (cardCount - 1))) / 2;
   }
   draw(handCards) {
     p5.fill(0, 0, 0, 128);
-    p5.rect(0, p5.height - GRID_SIZE2 * 1.2, p5.width, GRID_SIZE2 * 1.2);
+    p5.rect(0, p5.height - GRID_SIZE3 * 1.2, p5.width, GRID_SIZE3 * 1.2);
     handCards.cards.forEach((card, cardIndex) => {
       card.branches.forEach((branch, i) => {
         this.branchDrawer.draw({
@@ -960,92 +1056,6 @@ var HandCardsDrawer = class _HandCardsDrawer {
         });
       });
     });
-  }
-};
-var WaterParticle = class {
-  game;
-  index = 0;
-  sprites = [];
-  notConnectedDirections;
-  constructor(game) {
-    this.game = game;
-    this.notConnectedDirections = game.notConnectedDirections;
-  }
-  updateGame(game) {
-    this.game = game;
-    this.notConnectedDirections = game.notConnectedDirections;
-  }
-  count = 0;
-  draw() {
-    this.count = (this.count + 1) % 5;
-    const g1 = 0;
-    const yokoRange = [
-      -0.5,
-      0.5
-    ];
-    const tateRange = [
-      0.2,
-      1
-    ];
-    if (this.count == 0) {
-      this.notConnectedDirections.map(({ xIndex, yIndex, direction }) => {
-        var p = {
-          x: 0,
-          y: 0,
-          vx: 0,
-          vy: 0,
-          ax: 0,
-          ay: 0,
-          time: 0
-        };
-        p.ay = g1;
-        p5.fill(50, 100, 255);
-        var offsetX = 0;
-        var offsetY = 0;
-        if (direction == "up") {
-          offsetY = GRID_SIZE2 / 4;
-          p.x = xIndex * GRID_SIZE2 + GRID_SIZE2 / 2;
-          p.y = yIndex * GRID_SIZE2 + GRID_SIZE2;
-          p.vx = p5.random(yokoRange[0], yokoRange[1]);
-          p.vy = -p5.random(tateRange[0], tateRange[1]);
-        }
-        if (direction == "down") {
-          offsetY = -GRID_SIZE2 / 4;
-          p.x = xIndex * GRID_SIZE2 + GRID_SIZE2 / 2;
-          p.y = yIndex * GRID_SIZE2;
-          p.vx = p5.random(yokoRange[0], yokoRange[1]);
-          p.vy = p5.random(tateRange[0], tateRange[1]);
-        }
-        if (direction == "right") {
-          offsetX = GRID_SIZE2 / 4;
-          p.x = xIndex * GRID_SIZE2;
-          p.y = yIndex * GRID_SIZE2 + GRID_SIZE2 / 2;
-          p.vy = p5.random(yokoRange[0], yokoRange[1]);
-          p.vx = p5.random(tateRange[0], tateRange[1]);
-        }
-        if (direction == "left") {
-          offsetX = -GRID_SIZE2 / 4;
-          p.x = xIndex * GRID_SIZE2 + GRID_SIZE2;
-          p.y = yIndex * GRID_SIZE2 + GRID_SIZE2 / 2;
-          p.vy = p5.random(yokoRange[0], yokoRange[1]);
-          p.vx = -p5.random(tateRange[0], tateRange[1]);
-        }
-        this.sprites.push(p);
-      });
-    }
-    for (let i = this.sprites.length - 1; i >= 0; i--) {
-      let p = this.sprites[i];
-      p.vx += p.ax;
-      p.vy += p.ay;
-      p.x += p.vx;
-      p.y += p.vy;
-      p.time++;
-      p5.fill(50, 100, 255, 255 / p.time * 3);
-      p5.circle(p.x - mainCamera.x, p.y - mainCamera.y, p.time / 2);
-      if (p.time > 50) {
-        this.sprites.splice(i, 1);
-      }
-    }
   }
 };
 var ControlButtons = class {
@@ -1112,16 +1122,16 @@ var ControlButtons = class {
         button.position(leftMergin, p5.height);
       }
       if (i == 1) {
-        button.position(GRID_SIZE2 * 3 + leftMergin, p5.height);
+        button.position(GRID_SIZE3 * 3 + leftMergin, p5.height);
       }
       if (i == 2) {
-        button.position(GRID_SIZE2 * 6 + leftMergin, p5.height);
+        button.position(GRID_SIZE3 * 6 + leftMergin, p5.height);
       }
       if (i > 2 && i <= 5) {
-        button.position((i - 3) * 3 * GRID_SIZE2 + leftMergin, p5.height + 48);
+        button.position((i - 3) * 3 * GRID_SIZE3 + leftMergin, p5.height + 48);
       }
       if (i > 5) {
-        button.position((i - 6) * 3 * GRID_SIZE2 + leftMergin, p5.height + 48 * 2);
+        button.position((i - 6) * 3 * GRID_SIZE3 + leftMergin, p5.height + 48 * 2);
       }
     });
     return this;
@@ -1136,9 +1146,7 @@ var context = {
   set game(g) {
     _game = g;
     statusText = `\u6B8B\u308A\u30AB\u30FC\u30C9\uFF1A${_game.restCardCount}\u679A, \u7A74\u306E\u6570\uFF1A${_game.wayCount}\u500B`;
-    if (!waterParticle) {
-      waterParticle = new WaterParticle(g);
-    } else {
+    if (waterParticle) {
       waterParticle.updateGame(g);
     }
   }
@@ -1157,7 +1165,8 @@ p5.setup = function() {
   console.log(context.game);
   console.log(context.game.deck.cards.length);
   p5.createCanvas(400, 400);
-  mainCamera = new Camera(-200 + GRID_SIZE2, -200 + GRID_SIZE2, p5);
+  mainCamera = new Camera(-200 + GRID_SIZE3, -200 + GRID_SIZE3, p5);
+  waterParticle = new WaterParticle(context.game, mainCamera, p5);
   branchDrawer = new BranchDrawer(mainCamera, p5);
   fieldDrawer = new FieldDrawer(branchDrawer);
   selectedCardDrawer = new SelectedCardDrawer(branchDrawer, mainCamera);
@@ -1165,8 +1174,8 @@ p5.setup = function() {
   buttonCallback = {
     onSelected: (index) => {
       console.log("selected", index);
-      var xIndex = Math.floor((mainCamera.x + p5.width / 2) / GRID_SIZE2);
-      var yIndex = Math.floor((mainCamera.y + p5.height - GRID_SIZE2 * 3) / GRID_SIZE2);
+      var xIndex = Math.floor((mainCamera.x + p5.width / 2) / GRID_SIZE3);
+      var yIndex = Math.floor((mainCamera.y + p5.height - GRID_SIZE3 * 3) / GRID_SIZE3);
       context.game = context.game.selectCard({
         index,
         initPosIndex: {
@@ -1265,8 +1274,8 @@ p5.mouseDragged = function() {
     movePos.x += p5.mouseX - startMousePos.x;
     movePos.y += p5.mouseY - startMousePos.y;
     const posIndex = {
-      xIndex: startPosIndex.xIndex + Math.floor(movePos.x / GRID_SIZE2),
-      yIndex: startPosIndex.yIndex + Math.floor(movePos.y / GRID_SIZE2)
+      xIndex: startPosIndex.xIndex + Math.floor(movePos.x / GRID_SIZE3),
+      yIndex: startPosIndex.yIndex + Math.floor(movePos.y / GRID_SIZE3)
     };
     context.game = context.game.moveSelectedCardWithPosIndex(posIndex);
     startMousePos = {
@@ -1314,6 +1323,7 @@ p5.keyReleased = function() {
   }
 };
 export {
-  GRID_SIZE2 as GRID_SIZE,
+  GRID_SIZE3 as GRID_SIZE,
+  mainCamera,
   p5
 };

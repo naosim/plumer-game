@@ -5,6 +5,7 @@ import { PlumberGame } from "./domain/PlumberGame.ts";
 import { Camera } from './view/Camera.ts';
 import { BranchDrawer } from './view/BranchDrawer.ts';
 import { config } from './view/config.ts'
+import { WaterParticle } from './view/WaterParticle.ts';
 export const GRID_SIZE = config.gridSize;
 export const p5:any = window;
 
@@ -72,89 +73,6 @@ class HandCardsDrawer {
   }
 }
 
-class WaterParticle {
-  game:PlumberGame;
-  index = 0;
-  sprites:{x:number,y:number,vx:number, vy:number, ax:number, ay:number, time:number}[] = [];
-  notConnectedDirections:{
-    xIndex: number;
-    yIndex: number;
-    direction: "up" | "down" | "right" | "left";
-  }[]
-  constructor(game:PlumberGame) {
-    this.game = game;
-    this.notConnectedDirections = game.notConnectedDirections
-  }
-  updateGame(game:PlumberGame) {
-    this.game = game;
-    this.notConnectedDirections = game.notConnectedDirections
-  }
-  count = 0;
-  draw() {
-    this.count = (this.count + 1) % 5;
-    const g = 0.00;
-    const yokoRange = [-0.5, 0.5]
-    const tateRange = [0.2, 1.0]
-    if(this.count == 0) {
-      this.notConnectedDirections.map(({xIndex, yIndex, direction}) => {
-        var p = {x:0, y:0, vx:0, vy:0, ax:0, ay:0, time:0}
-        p.ay = g;
-        p5.fill(50, 100, 255);
-        var offsetX = 0;
-        var offsetY = 0;
-        if(direction == 'up') {
-          offsetY = GRID_SIZE / 4
-          p.x = xIndex * GRID_SIZE + GRID_SIZE / 2;
-          p.y = yIndex * GRID_SIZE + GRID_SIZE;
-          p.vx = p5.random(yokoRange[0], yokoRange[1])
-          p.vy = -p5.random(tateRange[0], tateRange[1]);
-          
-        }
-        if(direction == 'down') {
-          offsetY = - GRID_SIZE / 4
-          p.x = xIndex * GRID_SIZE + GRID_SIZE / 2;
-          p.y = yIndex * GRID_SIZE;
-          p.vx = p5.random(yokoRange[0], yokoRange[1])
-          p.vy = p5.random(tateRange[0], tateRange[1]);
-        }
-        if(direction == 'right') {
-          offsetX = GRID_SIZE / 4
-          p.x = xIndex * GRID_SIZE;
-          p.y = yIndex * GRID_SIZE + GRID_SIZE / 2;
-          p.vy = p5.random(yokoRange[0], yokoRange[1])
-          p.vx = p5.random(tateRange[0], tateRange[1]);
-        }
-        if(direction == 'left') {
-          offsetX = - GRID_SIZE / 4
-          p.x = xIndex * GRID_SIZE + GRID_SIZE;
-          p.y = yIndex * GRID_SIZE + GRID_SIZE / 2;
-          p.vy = p5.random(yokoRange[0], yokoRange[1])
-          p.vx = -p5.random(tateRange[0], tateRange[1]);
-        }
-        this.sprites.push(p)
-        // p5.square(xIndex * GRID_SIZE - mainCamera.x, yIndex * GRID_SIZE - mainCamera.y, GRID_SIZE, GRID_SIZE / 6)
-      })
-    }
-    
-    
-    for(let i = this.sprites.length - 1; i >= 0; i--) {
-      let p = this.sprites[i];
-      p.vx += p.ax;
-      p.vy += p.ay;
-      p.x += p.vx;
-      p.y += p.vy;
-      p.time++;
-      p5.fill(50, 100, 255, 255/p.time * 3);
-      p5.circle(p.x - mainCamera.x, p.y - mainCamera.y, p.time/2)
-
-      if(p.time > 50) {
-        this.sprites.splice(i, 1)
-      }
-    }
-  }
-}
-
-
 type ButtonCallback = {
   onSelected:(index:number) => void;
   onPressedArrow:(direction:'up'|'down'|'right'|'left') => void;
@@ -218,15 +136,13 @@ var context = {
   set game(g:PlumberGame) {
     _game = g;
     statusText = `残りカード：${_game.restCardCount}枚, 穴の数：${_game.wayCount}個`
-    if(!waterParticle) {
-      waterParticle = new WaterParticle(g);
-    } else {
+    if(waterParticle) {// 初回だけwaterParticleがnullのため
       waterParticle.updateGame(g);
     }
   }
 }
 
-var mainCamera:Camera;
+export var mainCamera:Camera;
 var branchDrawer:BranchDrawer;
 var fieldDrawer:FieldDrawer;
 var selectedCardDrawer:SelectedCardDrawer;
@@ -244,6 +160,7 @@ p5.setup = function() {
   p5.createCanvas(400, 400);
   // p5.randomSeed(99);
   mainCamera = new Camera(-200 + GRID_SIZE, -200 + GRID_SIZE, p5);
+  waterParticle = new WaterParticle(context.game, mainCamera, p5);
   branchDrawer = new BranchDrawer(mainCamera, p5);
   fieldDrawer = new FieldDrawer(branchDrawer);
   selectedCardDrawer = new SelectedCardDrawer(branchDrawer, mainCamera)

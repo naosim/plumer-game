@@ -21,6 +21,6 @@ export class Camera {
   }
 
   circle(x:number, y:number, r:number) {
-    this.p5.circle(x, y, r);
+    this.p5.circle(x - this.x, y - this.y, r);
   }
 }
