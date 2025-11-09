@@ -2,17 +2,12 @@ import { Branch } from '../domain/domain';
 import { Camera } from './Camera';
 import { config } from './config.ts';
 const GRID_SIZE = config.gridSize;
-const p5:any = window;
-
-const baseColor = () => p5.fill(160, 160, 160);
-const highColor = () => p5.fill(200, 200, 200);
-const darkColor = () => p5.fill(120, 120, 120);
 
 /**
  * ブランチ1マス分の描画
  */
 export class BranchDrawer {
-  constructor(private camera: Camera) { }
+  constructor(private camera: Camera, private p5:any) { }
   isSelectedCardArea({ xIndex, yIndex }: { xIndex: number; yIndex: number; }, pointerPos: { x: number; y: number; }) {
     const x = xIndex * GRID_SIZE;
     const y = yIndex * GRID_SIZE;
@@ -24,16 +19,26 @@ export class BranchDrawer {
     );
   }
 
+  baseColor() {
+    this.p5.fill(160, 160, 160);
+  }
+  highColor() {
+    this.p5.fill(200, 200, 200);
+  }
+  darkColor() {
+    this.p5.fill(120, 120, 120);
+  }
+
   drawHilight({ xIndex, yIndex, branch }: { xIndex: number; yIndex: number; branch: Branch; }, checkCardFitResult: boolean) {
     const x = xIndex * GRID_SIZE;
     const y = yIndex * GRID_SIZE;
     if (checkCardFitResult) {
-      p5.fill(255, 255, 255);
+      this.p5.fill(255, 255, 255);
     } else {
-      p5.fill(255, 0, 0);
+      this.p5.fill(255, 0, 0);
     }
 
-    p5.square(x - this.camera.x - 2, y - this.camera.y - 2, GRID_SIZE + 4);
+    this.p5.square(x - this.camera.x - 2, y - this.camera.y - 2, GRID_SIZE + 4);
   }
 
   draw({ xIndex, yIndex, branch }: { xIndex: number; yIndex: number; branch: Branch; }) {
@@ -41,21 +46,15 @@ export class BranchDrawer {
     const x = xIndex * GRID_SIZE;
     const y = yIndex * GRID_SIZE;
 
-    p5.fill(0, 0, 0);
-    p5.noStroke();
-    p5.square(x - this.camera.x, y - this.camera.y, GRID_SIZE);
-
-    if (branch.hasWay()) {
-      
-    } else {
-      throw new Error("道無し")
-    }
+    this.p5.fill(0, 0, 0);
+    this.p5.noStroke();
+    this.camera.square(x, y, GRID_SIZE)
 
     if (branch.isStopWay()) {
-      p5.fill(200, 100, 0);
+      this.p5.fill(200, 100, 0);
       this.camera.square(x + size, y + size, size);
     } else {
-      baseColor();
+      this.baseColor();
       var tl = 0;
       var tr = 0;
       var br = 0;
@@ -77,36 +76,36 @@ export class BranchDrawer {
     }
     
     if (branch.up) {
-      baseColor();
+      this.baseColor();
       this.camera.square(x + size, y, size);
-      highColor();
+      this.highColor();
       this.camera.rect(x + size + 2, y, 3, size);
-      darkColor();
+      this.darkColor();
       this.camera.rect(x + size - 2, y, size + 4, 2);
     }
     if (branch.right) {
-      baseColor();
+      this.baseColor();
       this.camera.square(x + size * 2, y + size, size);
-      highColor();
+      this.highColor();
       this.camera.rect(x + size * 2, y + size + 2, size, 3);
-      darkColor();
+      this.darkColor();
       this.camera.rect(x + GRID_SIZE - 2, y + size - 2, 2, size + 4);
     }
     if (branch.down) {
-      baseColor();
+      this.baseColor();
       this.camera.square(x + size, y + size * 2, size);
-      highColor();
+      this.highColor();
       this.camera.rect(x + size + 2, y + size * 2, 3, size);
-      darkColor();
+      this.darkColor();
       this.camera.rect(x + size - 2, y + GRID_SIZE - 2, size + 4, 2);
     }
     
     if (branch.left) {
-      baseColor();
+      this.baseColor();
       this.camera.square(x, y + size, size);
-      highColor();
+      this.highColor();
       this.camera.rect(x, y + size + 2, size, 3);
-      darkColor();
+      this.darkColor();
       this.camera.rect(x, y + size - 2, 2, size + 4);
     }
 

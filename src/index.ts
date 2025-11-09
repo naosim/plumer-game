@@ -13,8 +13,7 @@ export const p5:any = window;
 
 class FieldDrawer {
   constructor(
-    private branchDrawer:BranchDrawer,
-    private camera:Camera
+    private branchDrawer:BranchDrawer
   ) {
     this.branchDrawer = branchDrawer;
   }
@@ -54,8 +53,8 @@ class HandCardsDrawer {
     var cameraX = - HandCardsDrawer.leftMergin(3);
     var cameraY = - (p5.height - GRID_SIZE)
     console.log(GRID_SIZE, cameraX);
-    this.camera = new Camera(cameraX, cameraY);
-    this.branchDrawer = new BranchDrawer(this.camera);
+    this.camera = new Camera(cameraX, cameraY, p5);
+    this.branchDrawer = new BranchDrawer(this.camera, p5);
   }
   static leftMergin(cardCount:number) {
     return (p5.width - (GRID_SIZE * (2 * cardCount + (cardCount - 1)))) / 2
@@ -244,9 +243,9 @@ p5.setup = function() {
 
   p5.createCanvas(400, 400);
   // p5.randomSeed(99);
-  mainCamera = new Camera(-200 + GRID_SIZE, -200 + GRID_SIZE);
-  branchDrawer = new BranchDrawer(mainCamera);
-  fieldDrawer = new FieldDrawer(branchDrawer, mainCamera);
+  mainCamera = new Camera(-200 + GRID_SIZE, -200 + GRID_SIZE, p5);
+  branchDrawer = new BranchDrawer(mainCamera, p5);
+  fieldDrawer = new FieldDrawer(branchDrawer);
   selectedCardDrawer = new SelectedCardDrawer(branchDrawer, mainCamera)
   handCardsDrawer = new HandCardsDrawer();
   buttonCallback = {
