@@ -586,11 +586,11 @@ var PlumberGame = class _PlumberGame {
   selectedCard;
   notConnectedDirections;
   isCompleted;
-  constructor({ field, deck, handCards, config, selectedCard }) {
+  constructor({ field, deck, handCards, config: config2, selectedCard }) {
     this.field = field;
     this.deck = deck;
     this.handCards = handCards;
-    this.config = config;
+    this.config = config2;
     this.selectedCard = selectedCard;
     this.notConnectedDirections = field.getNotConnectedDirections();
     this.isCompleted = this.notConnectedDirections.length == 0;
@@ -716,15 +716,15 @@ var PlumberGame = class _PlumberGame {
       selectedCard
     });
   }
-  static initGame(config = {
+  static initGame(config2 = {
     centerCardLevel: "low",
     numberOfHandCards: 3
   }) {
-    const centerCard = config.centerCardLevel == "low" ? centerCards[0] : centerCards[1];
+    const centerCard = config2.centerCardLevel == "low" ? centerCards[0] : centerCards[1];
     const field = new Field().putCenterCard(centerCard);
     var deck = new Deck(cards).shuffle();
     var handCards = new HandCards();
-    for (let i = 0; i < config.numberOfHandCards; i++) {
+    for (let i = 0; i < config2.numberOfHandCards; i++) {
       var { card, deck } = deck.pickup();
       handCards = handCards.addCard(card);
     }
@@ -732,14 +732,160 @@ var PlumberGame = class _PlumberGame {
       field,
       deck,
       handCards,
-      config
+      config: config2
     });
   }
 };
 
-// src/index.ts
-var GRID_SIZE = 36;
+// src/view/Camera.ts
 var p5 = window;
+var Camera = class _Camera {
+  x;
+  y;
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+    this.startMousePos = {
+      x: 0,
+      y: 0
+    };
+  }
+  startMousePos;
+  mousePressed() {
+    this.startMousePos = {
+      x: p5.mouseX,
+      y: p5.mouseY
+    };
+    console.log(this.startMousePos);
+  }
+  mouseDragged() {
+    this.x -= p5.mouseX - this.startMousePos.x;
+    this.y -= p5.mouseY - this.startMousePos.y;
+    this.startMousePos = {
+      x: p5.mouseX,
+      y: p5.mouseY
+    };
+  }
+  mouseReleased() {
+  }
+  rect(x, y, w, h, tl, tr, br, bl) {
+    p5.rect(x - this.x, y - this.y, w, h, tl, tr, br, bl);
+  }
+  square(x, y, size, tl, tr, br, bl) {
+    p5.square(x - this.x, y - this.y, size, tl, tr, br, bl);
+  }
+  circle(x, y, r) {
+    p5.circle(x, y, r);
+  }
+  static none() {
+    return new _Camera(0, 0);
+  }
+};
+
+// src/view/config.ts
+var config = {
+  gridSize: 36
+};
+
+// src/view/BranchDrawer.ts
+var GRID_SIZE = config.gridSize;
+var p52 = window;
+var baseColor = () => p52.fill(160, 160, 160);
+var highColor = () => p52.fill(200, 200, 200);
+var darkColor = () => p52.fill(120, 120, 120);
+var BranchDrawer = class {
+  camera;
+  constructor(camera) {
+    this.camera = camera;
+  }
+  isSelectedCardArea({ xIndex, yIndex }, pointerPos) {
+    const x = xIndex * GRID_SIZE;
+    const y = yIndex * GRID_SIZE;
+    return pointerPos.x >= x - this.camera.x && pointerPos.y >= y - this.camera.y && pointerPos.x < x - this.camera.x + GRID_SIZE && pointerPos.y < y - this.camera.y + GRID_SIZE;
+  }
+  drawHilight({ xIndex, yIndex, branch }, checkCardFitResult) {
+    const x = xIndex * GRID_SIZE;
+    const y = yIndex * GRID_SIZE;
+    if (checkCardFitResult) {
+      p52.fill(255, 255, 255);
+    } else {
+      p52.fill(255, 0, 0);
+    }
+    p52.square(x - this.camera.x - 2, y - this.camera.y - 2, GRID_SIZE + 4);
+  }
+  draw({ xIndex, yIndex, branch }) {
+    const size = GRID_SIZE / 3;
+    const x = xIndex * GRID_SIZE;
+    const y = yIndex * GRID_SIZE;
+    p52.fill(0, 0, 0);
+    p52.noStroke();
+    p52.square(x - this.camera.x, y - this.camera.y, GRID_SIZE);
+    if (branch.hasWay()) {
+    } else {
+      throw new Error("\u9053\u7121\u3057");
+    }
+    if (branch.isStopWay()) {
+      p52.fill(200, 100, 0);
+      this.camera.square(x + size, y + size, size);
+    } else {
+      baseColor();
+      var tl = 0;
+      var tr = 0;
+      var br = 0;
+      var bl = 0;
+      const corner = 4;
+      if (!branch.up && !branch.left) {
+        tl = corner;
+      }
+      if (!branch.up && !branch.right) {
+        tr = corner;
+      }
+      if (!branch.down && !branch.right) {
+        br = corner;
+      }
+      if (!branch.down && !branch.left) {
+        bl = corner;
+      }
+      this.camera.square(x + size, y + size, size, tl, tr, br, bl);
+    }
+    if (branch.up) {
+      baseColor();
+      this.camera.square(x + size, y, size);
+      highColor();
+      this.camera.rect(x + size + 2, y, 3, size);
+      darkColor();
+      this.camera.rect(x + size - 2, y, size + 4, 2);
+    }
+    if (branch.right) {
+      baseColor();
+      this.camera.square(x + size * 2, y + size, size);
+      highColor();
+      this.camera.rect(x + size * 2, y + size + 2, size, 3);
+      darkColor();
+      this.camera.rect(x + GRID_SIZE - 2, y + size - 2, 2, size + 4);
+    }
+    if (branch.down) {
+      baseColor();
+      this.camera.square(x + size, y + size * 2, size);
+      highColor();
+      this.camera.rect(x + size + 2, y + size * 2, 3, size);
+      darkColor();
+      this.camera.rect(x + size - 2, y + GRID_SIZE - 2, size + 4, 2);
+    }
+    if (branch.left) {
+      baseColor();
+      this.camera.square(x, y + size, size);
+      highColor();
+      this.camera.rect(x, y + size + 2, size, 3);
+      darkColor();
+      this.camera.rect(x, y + size - 2, 2, size + 4);
+    }
+  }
+};
+
+// src/index.ts
+var GRID_SIZE2 = config.gridSize;
+var p53 = window;
 var FieldDrawer = class {
   branchDrawer;
   camera;
@@ -756,56 +902,6 @@ var FieldDrawer = class {
         branch
       });
     });
-  }
-};
-var BranchDrawer = class {
-  camera;
-  constructor(camera) {
-    this.camera = camera;
-  }
-  isSelectedCardArea({ xIndex, yIndex }, pointerPos) {
-    const x = xIndex * GRID_SIZE;
-    const y = yIndex * GRID_SIZE;
-    return pointerPos.x >= x - this.camera.x && pointerPos.y >= y - this.camera.y && pointerPos.x < x - this.camera.x + GRID_SIZE && pointerPos.y < y - this.camera.y + GRID_SIZE;
-  }
-  drawHilight({ xIndex, yIndex, branch }, checkCardFitResult) {
-    const x = xIndex * GRID_SIZE;
-    const y = yIndex * GRID_SIZE;
-    if (checkCardFitResult) {
-      p5.fill(255, 255, 255);
-    } else {
-      p5.fill(255, 0, 0);
-    }
-    p5.square(x - this.camera.x - 2, y - this.camera.y - 2, GRID_SIZE + 4);
-  }
-  draw({ xIndex, yIndex, branch }) {
-    const size = GRID_SIZE / 3;
-    const x = xIndex * GRID_SIZE;
-    const y = yIndex * GRID_SIZE;
-    p5.fill(0, 0, 0);
-    p5.noStroke();
-    p5.square(x - this.camera.x, y - this.camera.y, GRID_SIZE);
-    if (branch.hasWay()) {
-      if (branch.isStopWay()) {
-        p5.fill(200, 100, 0);
-      } else {
-        p5.fill(1, 168, 100);
-      }
-      p5.square(x + size - this.camera.x, y + size - this.camera.y, size);
-    }
-    p5.fill(1, 168, 100);
-    if (branch.up) {
-      p5.square(x + size - this.camera.x, y - this.camera.y, size);
-    }
-    if (branch.right) {
-      p5.square(x + size * 2 - this.camera.x, y + size - this.camera.y, size);
-    }
-    if (branch.down) {
-      p5.square(x + size - this.camera.x, y + size * 2 - this.camera.y, size);
-    }
-    if (branch.left) {
-      p5.square(x - this.camera.x, y + size - this.camera.y, size);
-    }
   }
 };
 var SelectedCardDrawer = class {
@@ -845,17 +941,17 @@ var HandCardsDrawer = class _HandCardsDrawer {
   camera;
   constructor() {
     var cameraX = -_HandCardsDrawer.leftMergin(3);
-    var cameraY = -(p5.height - GRID_SIZE);
-    console.log(GRID_SIZE, cameraX);
+    var cameraY = -(p53.height - GRID_SIZE2);
+    console.log(GRID_SIZE2, cameraX);
     this.camera = new Camera(cameraX, cameraY);
     this.branchDrawer = new BranchDrawer(this.camera);
   }
   static leftMergin(cardCount) {
-    return (p5.width - GRID_SIZE * (2 * cardCount + (cardCount - 1))) / 2;
+    return (p53.width - GRID_SIZE2 * (2 * cardCount + (cardCount - 1))) / 2;
   }
   draw(handCards) {
-    p5.fill(0, 0, 0, 128);
-    p5.rect(0, p5.height - GRID_SIZE * 1.2, p5.width, GRID_SIZE * 1.2);
+    p53.fill(0, 0, 0, 128);
+    p53.rect(0, p53.height - GRID_SIZE2 * 1.2, p53.width, GRID_SIZE2 * 1.2);
     handCards.cards.forEach((card, cardIndex) => {
       card.branches.forEach((branch, i) => {
         this.branchDrawer.draw({
@@ -904,36 +1000,36 @@ var WaterParticle = class {
           time: 0
         };
         p.ay = g1;
-        p5.fill(50, 100, 255);
+        p53.fill(50, 100, 255);
         var offsetX = 0;
         var offsetY = 0;
         if (direction == "up") {
-          offsetY = GRID_SIZE / 4;
-          p.x = xIndex * GRID_SIZE + GRID_SIZE / 2;
-          p.y = yIndex * GRID_SIZE + GRID_SIZE;
-          p.vx = p5.random(yokoRange[0], yokoRange[1]);
-          p.vy = -p5.random(tateRange[0], tateRange[1]);
+          offsetY = GRID_SIZE2 / 4;
+          p.x = xIndex * GRID_SIZE2 + GRID_SIZE2 / 2;
+          p.y = yIndex * GRID_SIZE2 + GRID_SIZE2;
+          p.vx = p53.random(yokoRange[0], yokoRange[1]);
+          p.vy = -p53.random(tateRange[0], tateRange[1]);
         }
         if (direction == "down") {
-          offsetY = -GRID_SIZE / 4;
-          p.x = xIndex * GRID_SIZE + GRID_SIZE / 2;
-          p.y = yIndex * GRID_SIZE;
-          p.vx = p5.random(yokoRange[0], yokoRange[1]);
-          p.vy = p5.random(tateRange[0], tateRange[1]);
+          offsetY = -GRID_SIZE2 / 4;
+          p.x = xIndex * GRID_SIZE2 + GRID_SIZE2 / 2;
+          p.y = yIndex * GRID_SIZE2;
+          p.vx = p53.random(yokoRange[0], yokoRange[1]);
+          p.vy = p53.random(tateRange[0], tateRange[1]);
         }
         if (direction == "right") {
-          offsetX = GRID_SIZE / 4;
-          p.x = xIndex * GRID_SIZE;
-          p.y = yIndex * GRID_SIZE + GRID_SIZE / 2;
-          p.vy = p5.random(yokoRange[0], yokoRange[1]);
-          p.vx = p5.random(tateRange[0], tateRange[1]);
+          offsetX = GRID_SIZE2 / 4;
+          p.x = xIndex * GRID_SIZE2;
+          p.y = yIndex * GRID_SIZE2 + GRID_SIZE2 / 2;
+          p.vy = p53.random(yokoRange[0], yokoRange[1]);
+          p.vx = p53.random(tateRange[0], tateRange[1]);
         }
         if (direction == "left") {
-          offsetX = -GRID_SIZE / 4;
-          p.x = xIndex * GRID_SIZE + GRID_SIZE;
-          p.y = yIndex * GRID_SIZE + GRID_SIZE / 2;
-          p.vy = p5.random(yokoRange[0], yokoRange[1]);
-          p.vx = -p5.random(tateRange[0], tateRange[1]);
+          offsetX = -GRID_SIZE2 / 4;
+          p.x = xIndex * GRID_SIZE2 + GRID_SIZE2;
+          p.y = yIndex * GRID_SIZE2 + GRID_SIZE2 / 2;
+          p.vy = p53.random(yokoRange[0], yokoRange[1]);
+          p.vx = -p53.random(tateRange[0], tateRange[1]);
         }
         this.sprites.push(p);
       });
@@ -945,8 +1041,8 @@ var WaterParticle = class {
       p.x += p.vx;
       p.y += p.vy;
       p.time++;
-      p5.fill(50, 100, 255, 255 / p.time * 3);
-      p5.circle(p.x - mainCamera.x, p.y - mainCamera.y, p.time / 2);
+      p53.fill(50, 100, 255, 255 / p.time * 3);
+      p53.circle(p.x - mainCamera.x, p.y - mainCamera.y, p.time / 2);
       if (p.time > 50) {
         this.sprites.splice(i, 1);
       }
@@ -1008,61 +1104,28 @@ var ControlButtons = class {
       ]
     ];
     buttonDefs.forEach(([label, cb], i) => {
-      const button = p5.createButton(label);
+      const button = p53.createButton(label);
       button.mouseReleased(cb);
       button.style("width", "72px");
       button.style("height", "36px");
       const leftMergin = HandCardsDrawer.leftMergin(3);
       if (i == 0) {
-        button.position(leftMergin, p5.height);
+        button.position(leftMergin, p53.height);
       }
       if (i == 1) {
-        button.position(GRID_SIZE * 3 + leftMergin, p5.height);
+        button.position(GRID_SIZE2 * 3 + leftMergin, p53.height);
       }
       if (i == 2) {
-        button.position(GRID_SIZE * 6 + leftMergin, p5.height);
+        button.position(GRID_SIZE2 * 6 + leftMergin, p53.height);
       }
       if (i > 2 && i <= 5) {
-        button.position((i - 3) * 3 * GRID_SIZE + leftMergin, p5.height + 48);
+        button.position((i - 3) * 3 * GRID_SIZE2 + leftMergin, p53.height + 48);
       }
       if (i > 5) {
-        button.position((i - 6) * 3 * GRID_SIZE + leftMergin, p5.height + 48 * 2);
+        button.position((i - 6) * 3 * GRID_SIZE2 + leftMergin, p53.height + 48 * 2);
       }
     });
     return this;
-  }
-};
-var Camera = class _Camera {
-  x;
-  y;
-  constructor(x, y) {
-    this.x = x;
-    this.y = y;
-    this.startMousePos = {
-      x: 0,
-      y: 0
-    };
-  }
-  startMousePos;
-  mousePressed() {
-    this.startMousePos = {
-      x: p5.mouseX,
-      y: p5.mouseY
-    };
-    console.log(this.startMousePos);
-  }
-  mouseDragged() {
-    this.x -= p5.mouseX - this.startMousePos.x;
-    this.y -= p5.mouseY - this.startMousePos.y;
-    this.startMousePos = {
-      x: p5.mouseX,
-      y: p5.mouseY
-    };
-  }
-  mouseReleased() {
-  }
-  static none() {
-    return new _Camera(0, 0);
   }
 };
 var _game;
@@ -1089,13 +1152,13 @@ var handCardsDrawer;
 var commandLogs = [];
 var buttonCallback;
 var waterParticle;
-p5.setup = function() {
+p53.setup = function() {
   context.game = PlumberGame.initGame();
   commandLogs.push(context.game);
   console.log(context.game);
   console.log(context.game.deck.cards.length);
-  p5.createCanvas(400, 400);
-  mainCamera = new Camera(-200 + GRID_SIZE, -200 + GRID_SIZE);
+  p53.createCanvas(400, 400);
+  mainCamera = new Camera(-200 + GRID_SIZE2, -200 + GRID_SIZE2);
   branchDrawer = new BranchDrawer(mainCamera);
   fieldDrawer = new FieldDrawer(branchDrawer, mainCamera);
   selectedCardDrawer = new SelectedCardDrawer(branchDrawer, mainCamera);
@@ -1103,8 +1166,8 @@ p5.setup = function() {
   buttonCallback = {
     onSelected: (index) => {
       console.log("selected", index);
-      var xIndex = Math.floor((mainCamera.x + p5.width / 2) / GRID_SIZE);
-      var yIndex = Math.floor((mainCamera.y + p5.height - GRID_SIZE * 3) / GRID_SIZE);
+      var xIndex = Math.floor((mainCamera.x + p53.width / 2) / GRID_SIZE2);
+      var yIndex = Math.floor((mainCamera.y + p53.height - GRID_SIZE2 * 3) / GRID_SIZE2);
       context.game = context.game.selectCard({
         index,
         initPosIndex: {
@@ -1139,8 +1202,8 @@ p5.setup = function() {
   };
   new ControlButtons(buttonCallback).init();
 };
-p5.draw = function() {
-  p5.background(220);
+p53.draw = function() {
+  p53.background(220);
   const game = context.game;
   waterParticle.draw();
   fieldDrawer.draw(game.field);
@@ -1149,13 +1212,13 @@ p5.draw = function() {
   }
   handCardsDrawer.draw(game.handCards);
   if (game.isCompleted) {
-    p5.fill(0, 0, 0);
-    p5.textSize(30);
-    p5.text("\u30B2\u30FC\u30E0\u30AF\u30EA\u30A2\uFF01", 100, 100);
+    p53.fill(0, 0, 0);
+    p53.textSize(30);
+    p53.text("\u30B2\u30FC\u30E0\u30AF\u30EA\u30A2\uFF01", 100, 100);
   }
-  p5.fill(0, 0, 0);
-  p5.textSize(16);
-  p5.text(statusText, 0, 16);
+  p53.fill(0, 0, 0);
+  p53.textSize(16);
+  p53.text(statusText, 0, 16);
 };
 var cardDragMode = false;
 var startMousePos = {
@@ -1170,21 +1233,21 @@ var startPosIndex = {
   xIndex: 0,
   yIndex: 0
 };
-p5.mousePressed = function() {
+p53.mousePressed = function() {
   const game = context.game;
   var pointerPos = {
-    x: p5.mouseX,
-    y: p5.mouseY
+    x: p53.mouseX,
+    y: p53.mouseY
   };
   cardDragMode = !!game.selectedCard && selectedCardDrawer.isSelectedCardArea(game.selectedCard, pointerPos);
   startMousePos = {
-    x: p5.mouseX,
-    y: p5.mouseY
+    x: p53.mouseX,
+    y: p53.mouseY
   };
   if (cardDragMode) {
     startMousePos = {
-      x: p5.mouseX,
-      y: p5.mouseY
+      x: p53.mouseX,
+      y: p53.mouseY
     };
     startPosIndex = {
       xIndex: game.selectedCard.posIndex.xIndex,
@@ -1198,33 +1261,33 @@ p5.mousePressed = function() {
     mainCamera.mousePressed();
   }
 };
-p5.mouseDragged = function() {
+p53.mouseDragged = function() {
   if (cardDragMode) {
-    movePos.x += p5.mouseX - startMousePos.x;
-    movePos.y += p5.mouseY - startMousePos.y;
+    movePos.x += p53.mouseX - startMousePos.x;
+    movePos.y += p53.mouseY - startMousePos.y;
     const posIndex = {
-      xIndex: startPosIndex.xIndex + Math.floor(movePos.x / GRID_SIZE),
-      yIndex: startPosIndex.yIndex + Math.floor(movePos.y / GRID_SIZE)
+      xIndex: startPosIndex.xIndex + Math.floor(movePos.x / GRID_SIZE2),
+      yIndex: startPosIndex.yIndex + Math.floor(movePos.y / GRID_SIZE2)
     };
     context.game = context.game.moveSelectedCardWithPosIndex(posIndex);
     startMousePos = {
-      x: p5.mouseX,
-      y: p5.mouseY
+      x: p53.mouseX,
+      y: p53.mouseY
     };
   } else {
     mainCamera.mouseDragged();
   }
 };
-p5.mouseReleased = function() {
+p53.mouseReleased = function() {
   if (cardDragMode) {
     cardDragMode = false;
   } else {
     mainCamera.mouseReleased();
   }
 };
-p5.keyReleased = function() {
-  const key = p5.key;
-  const keyCode = p5.keyCode;
+p53.keyReleased = function() {
+  const key = p53.key;
+  const keyCode = p53.keyCode;
   console.log(key, keyCode);
   if (context.game.selectedCard) {
     if (key == "ArrowUp") {
@@ -1250,4 +1313,8 @@ p5.keyReleased = function() {
   } else if (key == "3") {
     buttonCallback.onSelected(2);
   }
+};
+export {
+  GRID_SIZE2 as GRID_SIZE,
+  p53 as p5
 };

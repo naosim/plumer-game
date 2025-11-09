@@ -1,43 +1,12 @@
-import {Branch, Card, HandCards, branches, cards, centerCards } from './domain/domain.ts';
+import {Card, HandCards, branches, cards, centerCards } from './domain/domain.ts';
 import { Field } from "./domain/Field.ts";
 import { SelectedCard } from "./domain/SelectedCard.ts";
 import { PlumberGame } from "./domain/PlumberGame.ts";
-
-
-// declare global {
-//   interface p5 {
-//     fill:any;
-//     noStroke: any;
-//     square: any;
-//     createButton: any;
-//     createCanvas: any;
-//     randomSeed: any;
-//     setup: any;
-//     draw: any;
-//     background: any;
-//     mouseX:number;
-//     mouseY:number;
-//     mousePressed:any;
-//     mouseDragged:any;
-//     mouseReleased:any;
-//     width: number;
-//     height: number;
-//     textSize:any;
-//     text:any;
-//     rect:any;
-//     keyReleased:any;
-//     key:string;
-//     keyCode:number;
-//     random:any;
-//     circle:any;
-//   }
-// }
-
-
-
-const GRID_SIZE = 36;
-const p5:any = window;
-
+import { Camera } from './view/Camera.ts';
+import { BranchDrawer } from './view/BranchDrawer.ts';
+import { config } from './view/config.ts'
+export const GRID_SIZE = config.gridSize;
+export const p5:any = window;
 
 
 // application layer
@@ -53,65 +22,6 @@ class FieldDrawer {
     field.branchAndPosList.forEach(({branch, xIndex, yIndex}) => {
       this.branchDrawer.draw({xIndex, yIndex, branch});
     });
-  }
-}
-
-class BranchDrawer {
-  constructor(private camera:Camera) {}
-  isSelectedCardArea({xIndex, yIndex}:{xIndex:number, yIndex:number}, pointerPos: {x:number, y:number}) {
-    const x = xIndex * GRID_SIZE;
-    const y = yIndex * GRID_SIZE;
-    return (
-       pointerPos.x >= x - this.camera.x 
-    && pointerPos.y >= y - this.camera.y
-    && pointerPos.x < x - this.camera.x + GRID_SIZE 
-    && pointerPos.y < y - this.camera.y + GRID_SIZE
-  );
-  }
-
-  drawHilight({xIndex, yIndex, branch}:{xIndex:number, yIndex:number, branch:Branch}, checkCardFitResult:boolean) {
-    const x = xIndex * GRID_SIZE;
-    const y = yIndex * GRID_SIZE;
-    if(checkCardFitResult) {
-      p5.fill(255, 255, 255);
-    } else {
-      p5.fill(255, 0, 0);
-    }
-    
-    p5.square(x - this.camera.x - 2, y - this.camera.y - 2, GRID_SIZE + 4);
-  }
-
-  draw({xIndex, yIndex, branch}:{xIndex:number, yIndex:number, branch:Branch}) {
-    const size = GRID_SIZE / 3;
-    const x = xIndex * GRID_SIZE;
-    const y = yIndex * GRID_SIZE;
-
-    p5.fill(0, 0, 0);
-    p5.noStroke();
-    p5.square(x - this.camera.x, y - this.camera.y, GRID_SIZE);
-
-    if(branch.hasWay()) {
-      if(branch.isStopWay()) {
-        p5.fill(200, 100, 0)
-      } else {
-        p5.fill(1, 168, 100)
-      }
-      p5.square(x + size - this.camera.x, y + size - this.camera.y, size);
-    }
-    p5.fill(1, 168, 100)
-    if(branch.up) {
-      p5.square(x + size - this.camera.x, y - this.camera.y, size);
-    }
-    if(branch.right) {
-     p5.square(x + size * 2 - this.camera.x, y + size - this.camera.y, size);
-    }
-    if(branch.down) {
-      p5.square(x + size - this.camera.x, y + size * 2 - this.camera.y, size);
-    }
-    if(branch.left) {
-      p5.square(x - this.camera.x, y + size - this.camera.y, size);
-    }
-    
   }
 }
 
@@ -299,25 +209,6 @@ class ControlButtons {
       }
     })
     return this;
-  }
-}
-
-class Camera {
-  constructor(public x:number, public y:number) {}
-  startMousePos = {x:0, y:0}
-  mousePressed() {
-    this.startMousePos = {x:p5.mouseX, y:p5.mouseY}
-    console.log(this.startMousePos);
-  }
-  mouseDragged() {
-    this.x -= p5.mouseX - this.startMousePos.x;
-    this.y -= p5.mouseY - this.startMousePos.y;
-    this.startMousePos = {x:p5.mouseX, y:p5.mouseY}
-  }
-  mouseReleased() {}
-
-  static none() {
-    return new Camera(0, 0);
   }
 }
 
