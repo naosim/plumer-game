@@ -752,19 +752,19 @@ var Camera = class {
     };
   }
   startMousePos;
-  mousePressed() {
+  moveStart(mouseX, mouseY) {
     this.startMousePos = {
-      x: this.p5.mouseX,
-      y: this.p5.mouseY
+      x: mouseX,
+      y: mouseY
     };
     console.log(this.startMousePos);
   }
-  mouseDragged() {
+  moving(mouseX, mouseY) {
     this.x -= this.p5.mouseX - this.startMousePos.x;
     this.y -= this.p5.mouseY - this.startMousePos.y;
     this.startMousePos = {
-      x: this.p5.mouseX,
-      y: this.p5.mouseY
+      x: mouseX,
+      y: mouseY
     };
   }
   mouseReleased() {
@@ -1266,7 +1266,7 @@ p5.mousePressed = function() {
       y: 0
     };
   } else {
-    mainCamera.mousePressed();
+    mainCamera.moveStart(p5.mouseX, p5.mouseY);
   }
 };
 p5.mouseDragged = function() {
@@ -1283,7 +1283,7 @@ p5.mouseDragged = function() {
       y: p5.mouseY
     };
   } else {
-    mainCamera.mouseDragged();
+    mainCamera.moving(p5.mouseX, p5.mouseY);
   }
 };
 p5.mouseReleased = function() {

@@ -249,7 +249,7 @@ p5.mousePressed = function(){
     movePos = {x:0, y:0};
     
   } else {
-    mainCamera.mousePressed();
+    mainCamera.moveStart(p5.mouseX, p5.mouseY);
   }
   
 }
@@ -264,7 +264,7 @@ p5.mouseDragged = function(){
     context.game = context.game.moveSelectedCardWithPosIndex(posIndex);
     startMousePos = {x:p5.mouseX, y:p5.mouseY}
   } else {
-    mainCamera.mouseDragged();
+    mainCamera.moving(p5.mouseX, p5.mouseY);
   }
   
 }
