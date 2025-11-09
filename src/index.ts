@@ -1,7 +1,7 @@
 import {Card, HandCards, branches, cards, centerCards } from './domain/domain.ts';
 import { Field } from "./domain/Field.ts";
 import { SelectedCard } from "./domain/SelectedCard.ts";
-import { PlumberGame } from "./domain/PlumberGame.ts";
+import { PlumberGame, PlumberGameConfig } from "./domain/PlumberGame.ts";
 import { Camera } from './view/Camera.ts';
 import { BranchDrawer } from './view/BranchDrawer.ts';
 import { config } from './view/config.ts'
@@ -50,10 +50,16 @@ class SelectedCardDrawer {
 class HandCardsDrawer {
   branchDrawer:BranchDrawer;
   camera:Camera;
-  constructor() {
-    var cameraX = - HandCardsDrawer.leftMergin(3);
+  constructor(private gameConfig:PlumberGameConfig) {
+    var cameraX:number;
+    if(gameConfig.numberOfHandCards == 3) {
+      cameraX = - HandCardsDrawer.leftMergin(3);
+    } else if(gameConfig.numberOfHandCards == 4) {
+      cameraX = 0;
+    } else {
+      throw new Error("cameraXの割り当てがない");// 書かないとtsが警告を出すため
+    }
     var cameraY = - (p5.height - GRID_SIZE)
-    console.log(GRID_SIZE, cameraX);
     this.camera = new Camera(cameraX, cameraY, p5);
     this.branchDrawer = new BranchDrawer(this.camera, p5);
   }
@@ -69,7 +75,9 @@ class HandCardsDrawer {
         this.branchDrawer.draw({xIndex:i + cardIndex * 3, yIndex:0, branch});
       })
     })
-
+  }
+  getPosList() {
+    return new Array(this.gameConfig.numberOfHandCards).fill(1).map((_, i) => i * 3 * GRID_SIZE - this.camera.x)
   }
 }
 
@@ -85,23 +93,26 @@ type ButtonCallback = {
 
 class ControlButtons {
   cb: ButtonCallback
-  constructor(cb: ButtonCallback) {
+  constructor(cb: ButtonCallback, private posXList:number[]) {
     this.cb = cb;
   }
   init() {
+    console.log(`buttonCount:${this.posXList.length}`)
+    this.posXList
+      .map((x, i) => (['選択', x, () => {this.cb.onSelected(i)}] as [string, number,()=>void]))
+      .forEach(([label, posX, cb], i) => {
+        const button = p5.createButton(label);
+        button.mouseReleased(cb);
+        button.style('width', '72px');
+        button.style('height', '36px');
+        button.position(posX, p5.height)
+      })
+
     const buttonDefs:[string, ()=>void][] = [
-      ['選択', () => {this.cb.onSelected(0)}],
-      ['選択', () => {this.cb.onSelected(1)}],
-      ['選択', () => {this.cb.onSelected(2)}],
-      // ['◀', () => {this.cb.onPressedArrow('left')}],
-      // ['▲', () => {this.cb.onPressedArrow('up')}],
-      // ['▼', () => {this.cb.onPressedArrow('down')}],
-      // ['▶', () => {this.cb.onPressedArrow('right')}],
       ['回転', () => {this.cb.onPressedRotate()}],
       ['置く', () => {this.cb.onPut()}],
       ['手札リセット', () => {this.cb.onResetHandCards()}],
       ['やり直し', () => {this.cb.onUndo()}],
-      // ['ひく', () => {this.cb.onDraw()}],
     ];
     buttonDefs.forEach(([label, cb], i) => {
       const button = p5.createButton(label);
@@ -109,19 +120,10 @@ class ControlButtons {
       button.style('width', '72px');
       button.style('height', '36px');
       const leftMergin = HandCardsDrawer.leftMergin(3);
-      if(i == 0) {
-        button.position(leftMergin, p5.height)
+      if(i < 3) {
+        button.position((i) * 3 * GRID_SIZE + leftMergin, p5.height + 48)
       }
-      if(i == 1) {
-        button.position(GRID_SIZE * 3 + leftMergin, p5.height)
-      }
-      if(i == 2) {
-        button.position(GRID_SIZE * 6 + leftMergin, p5.height)
-      }
-      if(i > 2 && i <= 5) {
-        button.position((i - 3) * 3 * GRID_SIZE + leftMergin, p5.height + 48)
-      }
-      if(i > 5) {
+      if(i == 3) {
         button.position(6 * GRID_SIZE + leftMergin, p5.height + 48 * 2)
       }
     })
@@ -164,7 +166,8 @@ p5.setup = function() {
   branchDrawer = new BranchDrawer(mainCamera, p5);
   fieldDrawer = new FieldDrawer(branchDrawer);
   selectedCardDrawer = new SelectedCardDrawer(branchDrawer, mainCamera)
-  handCardsDrawer = new HandCardsDrawer();
+  handCardsDrawer = new HandCardsDrawer(context.game.config);
+  console.log(handCardsDrawer.getPosList())
   buttonCallback = {
     onSelected: (index:number) => {
       console.log('selected', index);
@@ -196,7 +199,7 @@ p5.setup = function() {
       context.game = commandLogs.at(-1)!;
     }
   };
-  new ControlButtons(buttonCallback).init();
+  new ControlButtons(buttonCallback, handCardsDrawer.getPosList()).init();
 }
 p5.draw = function() {
   p5.background(220);

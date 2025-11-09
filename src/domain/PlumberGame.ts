@@ -121,7 +121,7 @@ export class PlumberGame {
     return new PlumberGame({ field: this.field, deck:this.deck, handCards:this.handCards, config: this.config, selectedCard:selectedCard });
   }
 
-  static initGame(config: PlumberGameConfig = { centerCardLevel: "low", numberOfHandCards: 3 }) {
+  static initGame(config: PlumberGameConfig = { centerCardLevel: "low", numberOfHandCards: 4 }) {
     const centerCard = config.centerCardLevel == "low" ? centerCards[0] : centerCards[1];
     const field = new Field().putCenterCard(centerCard);
     var deck = new Deck(cards).shuffle();

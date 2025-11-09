@@ -718,7 +718,7 @@ var PlumberGame = class _PlumberGame {
   }
   static initGame(config2 = {
     centerCardLevel: "low",
-    numberOfHandCards: 3
+    numberOfHandCards: 4
   }) {
     const centerCard = config2.centerCardLevel == "low" ? centerCards[0] : centerCards[1];
     const field = new Field().putCenterCard(centerCard);
@@ -1032,12 +1032,20 @@ var SelectedCardDrawer = class {
   }
 };
 var HandCardsDrawer = class _HandCardsDrawer {
+  gameConfig;
   branchDrawer;
   camera;
-  constructor() {
-    var cameraX = -_HandCardsDrawer.leftMergin(3);
+  constructor(gameConfig) {
+    this.gameConfig = gameConfig;
+    var cameraX;
+    if (gameConfig.numberOfHandCards == 3) {
+      cameraX = -_HandCardsDrawer.leftMergin(3);
+    } else if (gameConfig.numberOfHandCards == 4) {
+      cameraX = 0;
+    } else {
+      throw new Error("cameraX\u306E\u5272\u308A\u5F53\u3066\u304C\u306A\u3044");
+    }
     var cameraY = -(p5.height - GRID_SIZE3);
-    console.log(GRID_SIZE3, cameraX);
     this.camera = new Camera(cameraX, cameraY, p5);
     this.branchDrawer = new BranchDrawer(this.camera, p5);
   }
@@ -1057,36 +1065,33 @@ var HandCardsDrawer = class _HandCardsDrawer {
       });
     });
   }
+  getPosList() {
+    return new Array(this.gameConfig.numberOfHandCards).fill(1).map((_, i) => i * 3 * GRID_SIZE3 - this.camera.x);
+  }
 };
 var ControlButtons = class {
+  posXList;
   cb;
-  constructor(cb) {
+  constructor(cb, posXList) {
+    this.posXList = posXList;
     this.cb = cb;
   }
   init() {
+    console.log(`buttonCount:${this.posXList.length}`);
+    this.posXList.map((x, i) => [
+      "\u9078\u629E",
+      x,
+      () => {
+        this.cb.onSelected(i);
+      }
+    ]).forEach(([label, posX, cb], i) => {
+      const button = p5.createButton(label);
+      button.mouseReleased(cb);
+      button.style("width", "72px");
+      button.style("height", "36px");
+      button.position(posX, p5.height);
+    });
     const buttonDefs = [
-      [
-        "\u9078\u629E",
-        () => {
-          this.cb.onSelected(0);
-        }
-      ],
-      [
-        "\u9078\u629E",
-        () => {
-          this.cb.onSelected(1);
-        }
-      ],
-      [
-        "\u9078\u629E",
-        () => {
-          this.cb.onSelected(2);
-        }
-      ],
-      // ['◀', () => {this.cb.onPressedArrow('left')}],
-      // ['▲', () => {this.cb.onPressedArrow('up')}],
-      // ['▼', () => {this.cb.onPressedArrow('down')}],
-      // ['▶', () => {this.cb.onPressedArrow('right')}],
       [
         "\u56DE\u8EE2",
         () => {
@@ -1118,19 +1123,10 @@ var ControlButtons = class {
       button.style("width", "72px");
       button.style("height", "36px");
       const leftMergin = HandCardsDrawer.leftMergin(3);
-      if (i == 0) {
-        button.position(leftMergin, p5.height);
+      if (i < 3) {
+        button.position(i * 3 * GRID_SIZE3 + leftMergin, p5.height + 48);
       }
-      if (i == 1) {
-        button.position(GRID_SIZE3 * 3 + leftMergin, p5.height);
-      }
-      if (i == 2) {
-        button.position(GRID_SIZE3 * 6 + leftMergin, p5.height);
-      }
-      if (i > 2 && i <= 5) {
-        button.position((i - 3) * 3 * GRID_SIZE3 + leftMergin, p5.height + 48);
-      }
-      if (i > 5) {
+      if (i == 3) {
         button.position(6 * GRID_SIZE3 + leftMergin, p5.height + 48 * 2);
       }
     });
@@ -1170,7 +1166,8 @@ p5.setup = function() {
   branchDrawer = new BranchDrawer(mainCamera, p5);
   fieldDrawer = new FieldDrawer(branchDrawer);
   selectedCardDrawer = new SelectedCardDrawer(branchDrawer, mainCamera);
-  handCardsDrawer = new HandCardsDrawer();
+  handCardsDrawer = new HandCardsDrawer(context.game.config);
+  console.log(handCardsDrawer.getPosList());
   buttonCallback = {
     onSelected: (index) => {
       console.log("selected", index);
@@ -1208,7 +1205,7 @@ p5.setup = function() {
       context.game = commandLogs.at(-1);
     }
   };
-  new ControlButtons(buttonCallback).init();
+  new ControlButtons(buttonCallback, handCardsDrawer.getPosList()).init();
 };
 p5.draw = function() {
   p5.background(220);
