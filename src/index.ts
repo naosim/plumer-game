@@ -4,37 +4,40 @@ import { SelectedCard } from "./domain/SelectedCard.ts";
 import { PlumberGame } from "./domain/PlumberGame.ts";
 
 
-declare global {
-  interface Window {
-    fill:any;
-    noStroke: any;
-    square: any;
-    createButton: any;
-    createCanvas: any;
-    randomSeed: any;
-    setup: any;
-    draw: any;
-    background: any;
-    mouseX:number;
-    mouseY:number;
-    mousePressed:any;
-    mouseDragged:any;
-    mouseReleased:any;
-    width: number;
-    height: number;
-    textSize:any;
-    text:any;
-    rect:any;
-    keyReleased:any;
-    key:string;
-    keyCode:number;
-    random:any;
-  }
-}
+// declare global {
+//   interface p5 {
+//     fill:any;
+//     noStroke: any;
+//     square: any;
+//     createButton: any;
+//     createCanvas: any;
+//     randomSeed: any;
+//     setup: any;
+//     draw: any;
+//     background: any;
+//     mouseX:number;
+//     mouseY:number;
+//     mousePressed:any;
+//     mouseDragged:any;
+//     mouseReleased:any;
+//     width: number;
+//     height: number;
+//     textSize:any;
+//     text:any;
+//     rect:any;
+//     keyReleased:any;
+//     key:string;
+//     keyCode:number;
+//     random:any;
+//     circle:any;
+//   }
+// }
 
 
 
 const GRID_SIZE = 36;
+const p5:any = window;
+
 
 
 // application layer
@@ -70,12 +73,12 @@ class BranchDrawer {
     const x = xIndex * GRID_SIZE;
     const y = yIndex * GRID_SIZE;
     if(checkCardFitResult) {
-      window.fill(255, 255, 255);
+      p5.fill(255, 255, 255);
     } else {
-      window.fill(255, 0, 0);
+      p5.fill(255, 0, 0);
     }
     
-    window.square(x - this.camera.x - 2, y - this.camera.y - 2, GRID_SIZE + 4);
+    p5.square(x - this.camera.x - 2, y - this.camera.y - 2, GRID_SIZE + 4);
   }
 
   draw({xIndex, yIndex, branch}:{xIndex:number, yIndex:number, branch:Branch}) {
@@ -83,30 +86,30 @@ class BranchDrawer {
     const x = xIndex * GRID_SIZE;
     const y = yIndex * GRID_SIZE;
 
-    window.fill(0, 0, 0);
-    window.noStroke();
-    window.square(x - this.camera.x, y - this.camera.y, GRID_SIZE);
+    p5.fill(0, 0, 0);
+    p5.noStroke();
+    p5.square(x - this.camera.x, y - this.camera.y, GRID_SIZE);
 
     if(branch.hasWay()) {
       if(branch.isStopWay()) {
-        window.fill(200, 100, 0)
+        p5.fill(200, 100, 0)
       } else {
-        window.fill(1, 168, 100)
+        p5.fill(1, 168, 100)
       }
-      window.square(x + size - this.camera.x, y + size - this.camera.y, size);
+      p5.square(x + size - this.camera.x, y + size - this.camera.y, size);
     }
-    window.fill(1, 168, 100)
+    p5.fill(1, 168, 100)
     if(branch.up) {
-      window.square(x + size - this.camera.x, y - this.camera.y, size);
+      p5.square(x + size - this.camera.x, y - this.camera.y, size);
     }
     if(branch.right) {
-     window.square(x + size * 2 - this.camera.x, y + size - this.camera.y, size);
+     p5.square(x + size * 2 - this.camera.x, y + size - this.camera.y, size);
     }
     if(branch.down) {
-      window.square(x + size - this.camera.x, y + size * 2 - this.camera.y, size);
+      p5.square(x + size - this.camera.x, y + size * 2 - this.camera.y, size);
     }
     if(branch.left) {
-      window.square(x - this.camera.x, y + size - this.camera.y, size);
+      p5.square(x - this.camera.x, y + size - this.camera.y, size);
     }
     
   }
@@ -139,17 +142,17 @@ class HandCardsDrawer {
   camera:Camera;
   constructor() {
     var cameraX = - HandCardsDrawer.leftMergin(3);
-    var cameraY = - (window.height - GRID_SIZE)
+    var cameraY = - (p5.height - GRID_SIZE)
     console.log(GRID_SIZE, cameraX);
     this.camera = new Camera(cameraX, cameraY);
     this.branchDrawer = new BranchDrawer(this.camera);
   }
   static leftMergin(cardCount:number) {
-    return (window.width - (GRID_SIZE * (2 * cardCount + (cardCount - 1)))) / 2
+    return (p5.width - (GRID_SIZE * (2 * cardCount + (cardCount - 1)))) / 2
   }
   draw(handCards:HandCards) {
-    window.fill(0,0,0, 128)
-    window.rect(0, window.height - GRID_SIZE * 1.2,window.width, GRID_SIZE * 1.2)
+    p5.fill(0,0,0, 128)
+    p5.rect(0, p5.height - GRID_SIZE * 1.2,p5.width, GRID_SIZE * 1.2)
 
     handCards.cards.forEach((card:Card, cardIndex) => {
       card.branches.forEach((branch, i) => {
@@ -187,40 +190,40 @@ class WaterParticle {
       this.notConnectedDirections.map(({xIndex, yIndex, direction}) => {
         var p = {x:0, y:0, vx:0, vy:0, ax:0, ay:0, time:0}
         p.ay = g;
-        window.fill(50, 100, 255);
+        p5.fill(50, 100, 255);
         var offsetX = 0;
         var offsetY = 0;
         if(direction == 'up') {
           offsetY = GRID_SIZE / 4
           p.x = xIndex * GRID_SIZE + GRID_SIZE / 2;
           p.y = yIndex * GRID_SIZE + GRID_SIZE;
-          p.vx = window.random(yokoRange[0], yokoRange[1])
-          p.vy = -window.random(tateRange[0], tateRange[1]);
+          p.vx = p5.random(yokoRange[0], yokoRange[1])
+          p.vy = -p5.random(tateRange[0], tateRange[1]);
           
         }
         if(direction == 'down') {
           offsetY = - GRID_SIZE / 4
           p.x = xIndex * GRID_SIZE + GRID_SIZE / 2;
           p.y = yIndex * GRID_SIZE;
-          p.vx = window.random(yokoRange[0], yokoRange[1])
-          p.vy = window.random(tateRange[0], tateRange[1]);
+          p.vx = p5.random(yokoRange[0], yokoRange[1])
+          p.vy = p5.random(tateRange[0], tateRange[1]);
         }
         if(direction == 'right') {
           offsetX = GRID_SIZE / 4
           p.x = xIndex * GRID_SIZE;
           p.y = yIndex * GRID_SIZE + GRID_SIZE / 2;
-          p.vy = window.random(yokoRange[0], yokoRange[1])
-          p.vx = window.random(tateRange[0], tateRange[1]);
+          p.vy = p5.random(yokoRange[0], yokoRange[1])
+          p.vx = p5.random(tateRange[0], tateRange[1]);
         }
         if(direction == 'left') {
           offsetX = - GRID_SIZE / 4
           p.x = xIndex * GRID_SIZE + GRID_SIZE;
           p.y = yIndex * GRID_SIZE + GRID_SIZE / 2;
-          p.vy = window.random(yokoRange[0], yokoRange[1])
-          p.vx = -window.random(tateRange[0], tateRange[1]);
+          p.vy = p5.random(yokoRange[0], yokoRange[1])
+          p.vx = -p5.random(tateRange[0], tateRange[1]);
         }
         this.sprites.push(p)
-        // window.square(xIndex * GRID_SIZE - mainCamera.x, yIndex * GRID_SIZE - mainCamera.y, GRID_SIZE, GRID_SIZE / 6)
+        // p5.square(xIndex * GRID_SIZE - mainCamera.x, yIndex * GRID_SIZE - mainCamera.y, GRID_SIZE, GRID_SIZE / 6)
       })
     }
     
@@ -232,8 +235,8 @@ class WaterParticle {
       p.x += p.vx;
       p.y += p.vy;
       p.time++;
-      window.fill(50, 100, 255, 255/p.time * 3);
-      window.circle(p.x - mainCamera.x, p.y - mainCamera.y, p.time/2)
+      p5.fill(50, 100, 255, 255/p.time * 3);
+      p5.circle(p.x - mainCamera.x, p.y - mainCamera.y, p.time/2)
 
       if(p.time > 50) {
         this.sprites.splice(i, 1)
@@ -274,25 +277,25 @@ class ControlButtons {
       // ['ひく', () => {this.cb.onDraw()}],
     ];
     buttonDefs.forEach(([label, cb], i) => {
-      const button = window.createButton(label);
+      const button = p5.createButton(label);
       button.mouseReleased(cb);
       button.style('width', '72px');
       button.style('height', '36px');
       const leftMergin = HandCardsDrawer.leftMergin(3);
       if(i == 0) {
-        button.position(leftMergin, window.height)
+        button.position(leftMergin, p5.height)
       }
       if(i == 1) {
-        button.position(GRID_SIZE * 3 + leftMergin, window.height)
+        button.position(GRID_SIZE * 3 + leftMergin, p5.height)
       }
       if(i == 2) {
-        button.position(GRID_SIZE * 6 + leftMergin, window.height)
+        button.position(GRID_SIZE * 6 + leftMergin, p5.height)
       }
       if(i > 2 && i <= 5) {
-        button.position((i - 3) * 3 * GRID_SIZE + leftMergin, window.height + 48)
+        button.position((i - 3) * 3 * GRID_SIZE + leftMergin, p5.height + 48)
       }
       if(i > 5) {
-        button.position((i - 6) * 3 * GRID_SIZE + leftMergin, window.height + 48 * 2)
+        button.position((i - 6) * 3 * GRID_SIZE + leftMergin, p5.height + 48 * 2)
       }
     })
     return this;
@@ -303,13 +306,13 @@ class Camera {
   constructor(public x:number, public y:number) {}
   startMousePos = {x:0, y:0}
   mousePressed() {
-    this.startMousePos = {x:window.mouseX, y:window.mouseY}
+    this.startMousePos = {x:p5.mouseX, y:p5.mouseY}
     console.log(this.startMousePos);
   }
   mouseDragged() {
-    this.x -= window.mouseX - this.startMousePos.x;
-    this.y -= window.mouseY - this.startMousePos.y;
-    this.startMousePos = {x:window.mouseX, y:window.mouseY}
+    this.x -= p5.mouseX - this.startMousePos.x;
+    this.y -= p5.mouseY - this.startMousePos.y;
+    this.startMousePos = {x:p5.mouseX, y:p5.mouseY}
   }
   mouseReleased() {}
 
@@ -342,14 +345,14 @@ var handCardsDrawer:HandCardsDrawer;
 var commandLogs:PlumberGame[] = [];
 var buttonCallback:ButtonCallback;
 var waterParticle:WaterParticle;
-window.setup = function() {
+p5.setup = function() {
   context.game = PlumberGame.initGame();
   commandLogs.push(context.game);
   console.log(context.game);
   console.log(context.game.deck.cards.length);
 
-  window.createCanvas(400, 400);
-  // window.randomSeed(99);
+  p5.createCanvas(400, 400);
+  // p5.randomSeed(99);
   mainCamera = new Camera(-200 + GRID_SIZE, -200 + GRID_SIZE);
   branchDrawer = new BranchDrawer(mainCamera);
   fieldDrawer = new FieldDrawer(branchDrawer, mainCamera);
@@ -358,8 +361,8 @@ window.setup = function() {
   buttonCallback = {
     onSelected: (index:number) => {
       console.log('selected', index);
-      var xIndex = Math.floor((mainCamera.x + window.width / 2) / GRID_SIZE);
-      var yIndex = Math.floor((mainCamera.y + window.height - GRID_SIZE * 3) / GRID_SIZE);
+      var xIndex = Math.floor((mainCamera.x + p5.width / 2) / GRID_SIZE);
+      var yIndex = Math.floor((mainCamera.y + p5.height - GRID_SIZE * 3) / GRID_SIZE);
       context.game = context.game.selectCard({index, initPosIndex:{xIndex, yIndex}});
     },
     onPressedArrow: (direction) => {
@@ -388,8 +391,8 @@ window.setup = function() {
   };
   new ControlButtons(buttonCallback).init();
 }
-window.draw = function() {
-  window.background(220);
+p5.draw = function() {
+  p5.background(220);
 
   const game = context.game;
 
@@ -409,15 +412,15 @@ window.draw = function() {
   
   // ゲームクリア
   if(game.isCompleted) {
-    window.fill(0,0,0);
-    window.textSize(30);
-    window.text("ゲームクリア！", 100, 100)
+    p5.fill(0,0,0);
+    p5.textSize(30);
+    p5.text("ゲームクリア！", 100, 100)
   }
 
   // ステータス
-  window.fill(0, 0, 0);
-  window.textSize(16);
-  window.text(statusText, 0, 16);
+  p5.fill(0, 0, 0);
+  p5.textSize(16);
+  p5.text(statusText, 0, 16);
   
 }
 
@@ -425,13 +428,13 @@ var cardDragMode = false;
 var startMousePos = {x:0, y:0}
 var movePos = {x:0, y:0}
 var startPosIndex = {xIndex:0, yIndex:0}
-window.mousePressed = function(){
+p5.mousePressed = function(){
   const game = context.game;
-  var pointerPos = {x:window.mouseX, y:window.mouseY};
+  var pointerPos = {x:p5.mouseX, y:p5.mouseY};
   cardDragMode = !!game.selectedCard && selectedCardDrawer.isSelectedCardArea(game.selectedCard, pointerPos)
-  startMousePos = {x:window.mouseX, y:window.mouseY}
+  startMousePos = {x:p5.mouseX, y:p5.mouseY}
   if(cardDragMode) {
-    startMousePos = {x:window.mouseX, y:window.mouseY}
+    startMousePos = {x:p5.mouseX, y:p5.mouseY}
     startPosIndex = {
       xIndex:game.selectedCard!.posIndex.xIndex,
       yIndex:game.selectedCard!.posIndex.yIndex
@@ -443,22 +446,22 @@ window.mousePressed = function(){
   }
   
 }
-window.mouseDragged = function(){
+p5.mouseDragged = function(){
   if(cardDragMode) {
-    movePos.x += window.mouseX - startMousePos.x;
-    movePos.y += window.mouseY - startMousePos.y;
+    movePos.x += p5.mouseX - startMousePos.x;
+    movePos.y += p5.mouseY - startMousePos.y;
     const posIndex = {
       xIndex: startPosIndex.xIndex + Math.floor(movePos.x / GRID_SIZE),
       yIndex: startPosIndex.yIndex + Math.floor(movePos.y / GRID_SIZE),
     }
     context.game = context.game.moveSelectedCardWithPosIndex(posIndex);
-    startMousePos = {x:window.mouseX, y:window.mouseY}
+    startMousePos = {x:p5.mouseX, y:p5.mouseY}
   } else {
     mainCamera.mouseDragged();
   }
   
 }
-window.mouseReleased = function(){
+p5.mouseReleased = function(){
   if(cardDragMode) {
     cardDragMode = false;
   } else {
@@ -467,9 +470,9 @@ window.mouseReleased = function(){
   
 }
 
-window.keyReleased = function() {
-  const key = window.key;
-  const keyCode = window.keyCode;
+p5.keyReleased = function() {
+  const key = p5.key;
+  const keyCode = p5.keyCode;
   console.log(key, keyCode)
   if(context.game.selectedCard) {
     if(key == 'ArrowUp') {
