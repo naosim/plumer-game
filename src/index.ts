@@ -6,8 +6,8 @@ import { Camera } from './view/Camera.ts';
 import { BranchDrawer } from './view/BranchDrawer.ts';
 import { config } from './view/config.ts'
 import { WaterParticle } from './view/WaterParticle.ts';
-export const GRID_SIZE = config.gridSize;
-export const p5:any = window;
+const GRID_SIZE = config.gridSize;
+const p5:any = window;
 
 
 // application layer
@@ -122,7 +122,7 @@ class ControlButtons {
         button.position((i - 3) * 3 * GRID_SIZE + leftMergin, p5.height + 48)
       }
       if(i > 5) {
-        button.position((i - 6) * 3 * GRID_SIZE + leftMergin, p5.height + 48 * 2)
+        button.position(6 * GRID_SIZE + leftMergin, p5.height + 48 * 2)
       }
     })
     return this;

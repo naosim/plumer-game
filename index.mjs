@@ -1131,7 +1131,7 @@ var ControlButtons = class {
         button.position((i - 3) * 3 * GRID_SIZE3 + leftMergin, p5.height + 48);
       }
       if (i > 5) {
-        button.position((i - 6) * 3 * GRID_SIZE3 + leftMergin, p5.height + 48 * 2);
+        button.position(6 * GRID_SIZE3 + leftMergin, p5.height + 48 * 2);
       }
     });
     return this;
@@ -1323,7 +1323,5 @@ p5.keyReleased = function() {
   }
 };
 export {
-  GRID_SIZE3 as GRID_SIZE,
-  mainCamera,
-  p5
+  mainCamera
 };
